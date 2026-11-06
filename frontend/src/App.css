@@ -321,7 +321,7 @@
   transform: translateY(-2px);
 }
 
-/* Responsive adjustments */
+/* ─── 1280px and below (small laptop) ─────────────────────── */
 @media (max-width: 1280px) {
   .site-header {
     padding: 28px 48px 0 48px;
@@ -353,43 +353,201 @@
   }
 }
 
+/* ─── Mobile navigation: completely hidden on desktop ──────── */
+.mobile-controls,
+.mobile-nav-overlay,
+.mobile-nav-drawer {
+  display: none;
+}
+
+@media (min-width: 769px) {
+  .mobile-controls,
+  .mobile-nav-overlay,
+  .mobile-nav-drawer {
+    display: none !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+  }
+}
+
+/* ─── 768px and below (tablet / mobile) ───────────────────── */
 @media (max-width: 768px) {
+
+  /* Header: single row — logo left, controls right */
   .site-header {
-    padding: 24px 20px 0 20px;
-    flex-direction: column;
-    gap: 20px;
+    padding: 22px 20px 0 20px;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0;
   }
+
+  /* Hide the full desktop nav */
   .header-nav {
-    gap: 18px;
-    flex-wrap: wrap;
+    display: none;
   }
+
+  /* Show the compact controls (theme toggle + hamburger) */
+  .mobile-controls {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  /* ── Hamburger button ───────────────────────────────────── */
+  .hamburger {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 5px;
+    width: 36px;
+    height: 36px;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    color: var(--fg);
+  }
+
+  .ham-bar {
+    display: block;
+    width: 20px;
+    height: 1.5px;
+    background: var(--fg);
+    border-radius: 1px;
+    transform-origin: center;
+    transition:
+      transform  0.3s cubic-bezier(0.16, 1, 0.3, 1),
+      opacity    0.2s ease,
+      width      0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Morph into × when open */
+  .ham-bar-1.open { transform: translateY(6.5px) rotate(45deg); }
+  .ham-bar-2.open { opacity: 0; width: 0; }
+  .ham-bar-3.open { transform: translateY(-6.5px) rotate(-45deg); }
+
+  /* ── Backdrop overlay ───────────────────────────────────── */
+  .mobile-nav-overlay {
+    display: none;
+  }
+  .mobile-nav-overlay.open {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 40;
+    background: transparent;
+  }
+
+  /* ── Mobile drawer ──────────────────────────────────────── */
+  .mobile-nav-drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: min(260px, 76vw);
+    z-index: 50;
+    background: var(--bg);
+    border-left: 1px solid var(--line);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 0;
+    padding: 48px 32px;
+
+    /* Enter from right */
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  .mobile-nav-drawer.open {
+    transform: translateX(0);
+  }
+
+  .mobile-nav-item {
+    font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.18em;
+    color: var(--fg-muted);
+    text-decoration: none;
+    padding: 16px 0;
+    border-bottom: 1px solid var(--line-subtle);
+    transition: color 0.2s ease, letter-spacing 0.25s ease;
+  }
+
+  .mobile-nav-item:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-nav-item.active {
+    color: var(--fg);
+    letter-spacing: 0.22em;
+  }
+
+  .mobile-nav-item:hover {
+    color: var(--fg);
+  }
+
+  /* ── Hero ───────────────────────────────────────────────── */
   .hero-content {
-    padding-left: 20px;
-    padding-top: 60px;
+    padding-left: 24px;
+    padding-right: 24px;
+    padding-top: 0;
+    /* Vertically centre the lockup in the remaining space */
+    justify-content: center;
+    padding-bottom: 10vh;
   }
+
+  .main-title {
+    line-height: 0.86;
+  }
+
+  /*
+   * Font size: fluid from 390px → 768px.
+   * At 390px wide with 24px padding each side, usable width = 342px.
+   * TURING (6 chars) is the wider row; at ~0.6 ch/px ratio
+   * for the font we target ~72px so it fills ~342px well.
+   * We use clamp so it scales naturally at in-between widths.
+   */
   .title-row {
-    font-size: 58px;
-    transform: none;
+    font-size: clamp(68px, 18.5vw, 110px);
+    transform: none !important;    /* cancel desktop scaleX */
+    letter-spacing: 0.02em;
   }
-  .title-row-1, .title-row-2 {
-    transform: none;
-    letter-spacing: 0.03em;
+
+  .title-row-1 {
+    letter-spacing: 0.03em;        /* slightly more for ALAN */
+    transform: none !important;
   }
+
   .title-row-2 {
     margin-top: 4px;
+    transform: none !important;
   }
+
   .letter-stylized-a {
-    width: 48px;
-    height: 44px;
+    /* Scale the custom A proportionally with the font size */
+    width:  clamp(55px, 14.5vw, 90px);
+    height: clamp(51px, 13.5vw, 84px);
+    margin-right: 4px;
   }
+
+  /* CLUB — keep readable, proportional to heading */
   .title-sub {
-    width: 180px;
-    margin-top: 14px;
-    padding-left: 8px;
-    transform: none;
+    /* Match visual width of the two heading rows */
+    width: auto;
+    margin-top: clamp(16px, 4vw, 28px);
+    padding-left: 4px;
+    padding-right: 0;
+    /* Distribute the four letters evenly */
+    justify-content: space-between;
+    max-width: clamp(200px, 52vw, 310px);
   }
+
   .title-sub span {
-    font-size: 16px;
+    font-size: clamp(18px, 5vw, 28px);
   }
 }
 
@@ -422,11 +580,13 @@
     transform: none !important;
     transition: none !important;
   }
+}
 
+/* On desktop, reduced-motion must still show the scaleX final state */
+@media (prefers-reduced-motion: reduce) and (min-width: 769px) {
   .title-row-1 {
     transform: scaleX(1.18) !important;
   }
-
   .title-row-2 {
     transform: scaleX(1.2) !important;
   }
@@ -464,4 +624,10 @@
 
 .theme-toggle:hover svg {
   transform: rotate(20deg);
+}
+
+/* Align desktop theme toggle vertically with the nav links */
+.header-nav .theme-toggle {
+  align-self: flex-start;
+  margin-top: -7.5px;
 }

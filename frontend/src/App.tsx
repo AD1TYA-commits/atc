@@ -21,17 +21,34 @@ function getInitialTheme(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
+// ─── Theme icon (hoisted outside App to satisfy lint) ─────────
+function ThemeIcon({ theme }: { theme: Theme }) {
+  return theme === 'dark' ? (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="5" />
+      <line x1="12" y1="1"  x2="12" y2="3"  />
+      <line x1="12" y1="21" x2="12" y2="23" />
+      <line x1="4.22"  y1="4.22"  x2="5.64"  y2="5.64"  />
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
+      <line x1="1"  y1="12" x2="3"  y2="12" />
+      <line x1="21" y1="12" x2="23" y2="12" />
+      <line x1="4.22"  y1="19.78" x2="5.64"  y2="18.36" />
+      <line x1="18.36" y1="5.64"  x2="19.78" y2="4.22"  />
+    </svg>
+  ) : (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
 // ─── Component ────────────────────────────────────────────────
 export default function App() {
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Theme state — initialised from localStorage / OS preference
-  const [theme, setTheme] = useState<Theme>(getInitialTheme);
-
-  // Active nav hash — driven by URL hash changes + IntersectionObserver
-  const [activeHash, setActiveHash] = useState<string>(() =>
-    window.location.hash || '#home'
-  );
+  const [theme, setTheme]           = useState<Theme>(getInitialTheme);
+  const [activeHash, setActiveHash] = useState<string>(() => window.location.hash || '#home');
+  const [menuOpen, setMenuOpen]     = useState(false);
 
   // 4×4 plus-sign grid in upper-right
   const plusCols = [1422, 1475, 1528, 1580];
@@ -54,26 +71,24 @@ export default function App() {
     localStorage.setItem(STORAGE_KEY, theme);
   }, [theme]);
 
+  // ── Lock body scroll when menu is open ─────────────────────
+  useEffect(() => {
+    document.body.style.overflow = menuOpen ? 'hidden' : '';
+    return () => { document.body.style.overflow = ''; };
+  }, [menuOpen]);
+
   // ── Active nav: hashchange + popstate ──────────────────────
   useEffect(() => {
-    const syncHash = () => {
-      setActiveHash(window.location.hash || '#home');
-    };
+    const syncHash = () => setActiveHash(window.location.hash || '#home');
 
-    // Fire on hash changes (anchor clicks, browser back/fwd)
     window.addEventListener('hashchange', syncHash);
     window.addEventListener('popstate', syncHash);
 
-    // IntersectionObserver for scroll-based detection.
-    // We only have one real page section (#home) but we register
-    // any section-like landmarks that may exist in the DOM.
     const sectionIds = NAV_ITEMS.map((n) => n.hash.replace('#', ''));
     const observer = new IntersectionObserver(
       (entries) => {
         for (const entry of entries) {
-          if (entry.isIntersecting) {
-            setActiveHash(`#${entry.target.id}`);
-          }
+          if (entry.isIntersecting) setActiveHash(`#${entry.target.id}`);
         }
       },
       { threshold: 0.5 }
@@ -91,63 +106,42 @@ export default function App() {
     };
   }, []);
 
-  // ── Inertial mouse parallax via CSS Custom Properties ──────
+  // ── Inertial mouse parallax (desktop only) ─────────────────
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mediaQuery.matches) return;
+    // Skip parallax on touch devices
+    if (window.matchMedia('(pointer: coarse)').matches) return;
 
-    let targetX = 0;
-    let targetY = 0;
-    let currentX = 0;
-    let currentY = 0;
+    let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
     let animId: number;
 
     const handleMouseMove = (e: MouseEvent) => {
       targetX = (e.clientX / window.innerWidth) * 2 - 1;
       targetY = (e.clientY / window.innerHeight) * 2 - 1;
     };
-
-    const handleMouseLeave = () => {
-      targetX = 0;
-      targetY = 0;
-    };
+    const handleMouseLeave = () => { targetX = 0; targetY = 0; };
 
     window.addEventListener('mousemove', handleMouseMove, { passive: true });
     window.addEventListener('mouseleave', handleMouseLeave);
 
-    const lerp = (start: number, end: number, factor: number) =>
-      start + (end - start) * factor;
+    const lerp = (s: number, e: number, f: number) => s + (e - s) * f;
 
     const tick = () => {
       currentX = lerp(currentX, targetX, 0.04);
       currentY = lerp(currentY, targetY, 0.04);
-
       if (containerRef.current) {
-        containerRef.current.style.setProperty(
-          '--shift-circles-x', `${(currentX * 12).toFixed(2)}px`
-        );
-        containerRef.current.style.setProperty(
-          '--shift-circles-y', `${(currentY * 12).toFixed(2)}px`
-        );
-        containerRef.current.style.setProperty(
-          '--shift-grid-x', `${(currentX * -6).toFixed(2)}px`
-        );
-        containerRef.current.style.setProperty(
-          '--shift-grid-y', `${(currentY * -6).toFixed(2)}px`
-        );
-        containerRef.current.style.setProperty(
-          '--shift-crosshair-x', `${(currentX * 8).toFixed(2)}px`
-        );
-        containerRef.current.style.setProperty(
-          '--shift-crosshair-y', `${(currentY * 8).toFixed(2)}px`
-        );
+        containerRef.current.style.setProperty('--shift-circles-x', `${(currentX * 12).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--shift-circles-y', `${(currentY * 12).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--shift-grid-x',    `${(currentX * -6).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--shift-grid-y',    `${(currentY * -6).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--shift-crosshair-x', `${(currentX * 8).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--shift-crosshair-y', `${(currentY * 8).toFixed(2)}px`);
       }
-
       animId = requestAnimationFrame(tick);
     };
 
     animId = requestAnimationFrame(tick);
-
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('mouseleave', handleMouseLeave);
@@ -155,14 +149,16 @@ export default function App() {
     };
   }, []);
 
-  // ── SVG colour values derived from CSS vars at render time ─
-  // We use CSS currentColor / stroke="currentColor" where possible
-  // but for SVG attributes we pass literal values and let the CSS
-  // variable drive them via a <style> block inside the SVG.
+  const handleNavClick = (hash: string) => {
+    setActiveHash(hash);
+    setMenuOpen(false);
+  };
+
 
   return (
     <div className="landing-container" ref={containerRef} id="home">
-      {/* Background Geometry */}
+
+      {/* ── Background Geometry ──────────────────────────────── */}
       <svg
         className="geometric-background"
         viewBox="0 0 1648 928"
@@ -171,7 +167,6 @@ export default function App() {
         preserveAspectRatio="xMidYMid slice"
         aria-hidden="true"
       >
-        {/* Inject CSS variables into SVG for stroke colours */}
         <defs>
           <style>{`
             .svg-line   { stroke: var(--line);       }
@@ -186,13 +181,13 @@ export default function App() {
 
         {/* Static Construction Lines */}
         <g className="geo-static-lines">
-          <line className="svg-line" x1="0" y1="502" x2="1648" y2="502" strokeWidth="1" />
-          <line className="svg-line" x1="1162" y1="60" x2="1162" y2="885" strokeWidth="1" />
-          <line className="svg-line" x1="55" y1="850" x2="770" y2="850" strokeWidth="1" />
-          <line className="svg-line" x1="55" y1="10" x2="55" y2="180" strokeWidth="1" />
+          <line className="svg-line" x1="0"    y1="502" x2="1648" y2="502" strokeWidth="1" />
+          <line className="svg-line" x1="1162" y1="60"  x2="1162" y2="885" strokeWidth="1" />
+          <line className="svg-line" x1="55"   y1="850" x2="770"  y2="850" strokeWidth="1" />
+          <line className="svg-line" x1="55"   y1="10"  x2="55"   y2="180" strokeWidth="1" />
         </g>
 
-        {/* Dynamic / Interactive Circle Layer */}
+        {/* Interactive / Animated Circles */}
         <g className="geo-interactive-circles">
           <circle className="svg-cfill" cx="1162" cy="502" r="462" stroke="none" opacity="0.32" />
           <circle className="svg-circle" cx="1162" cy="502" r="462" strokeWidth="1" />
@@ -200,23 +195,19 @@ export default function App() {
             <circle className="svg-circle" cx="1015" cy="482" r="373" strokeWidth="1" />
           </g>
           <circle className="svg-circle" cx="1162" cy="502" r="236" strokeWidth="1" />
-          <circle className="svg-circle" cx="254" cy="712" r="729" strokeWidth="1" />
+          <circle className="svg-circle" cx="254"  cy="712" r="729" strokeWidth="1" />
         </g>
 
-        {/* Center small marker */}
-        <rect className="svg-bar geo-center-marker" x="1159" y="499" width="6" height="6" />
-
-        {/* Left edge bar */}
-        <rect className="svg-bar geo-edge-bar geo-left-bar" x="54" y="340" width="30" height="9" rx="1.5" />
-
-        {/* Right edge bar */}
+        {/* Markers */}
+        <rect className="svg-bar geo-center-marker" x="1159" y="499" width="6"  height="6" />
+        <rect className="svg-bar geo-edge-bar geo-left-bar"  x="54"   y="340" width="30" height="9" rx="1.5" />
         <rect className="svg-bar geo-edge-bar geo-right-bar" x="1560" y="658" width="28" height="9" rx="1.5" />
 
-        {/* Crosshair Markers */}
+        {/* Crosshairs */}
         <g className="geo-crosshairs">
           <g className="crosshair-marker crosshair-ul">
-            <line className="svg-ch" x1="68" y1="125" x2="100" y2="125" strokeWidth="1.2" />
-            <line className="svg-ch" x1="84" y1="107" x2="84" y2="143" strokeWidth="1.2" />
+            <line className="svg-ch" x1="68"   y1="125" x2="100"  y2="125" strokeWidth="1.2" />
+            <line className="svg-ch" x1="84"   y1="107" x2="84"   y2="143" strokeWidth="1.2" />
           </g>
           <g className="crosshair-marker crosshair-lr">
             <line className="svg-ch" x1="1527" y1="847" x2="1563" y2="847" strokeWidth="1.2" />
@@ -224,9 +215,8 @@ export default function App() {
           </g>
         </g>
 
-        {/* Secondary Grid Elements */}
+        {/* Grids */}
         <g className="geo-grids">
-          {/* Upper-right 4×4 plus-sign grid */}
           <g className="plus-grid">
             {plusRows.map((py, ri) =>
               plusCols.map((px, ci) => (
@@ -237,8 +227,6 @@ export default function App() {
               ))
             )}
           </g>
-
-          {/* Lower-left dotted grid */}
           <g className="dot-grid">
             {dotRows.map((dy, rIndex) =>
               dotCols.map((dx, cIndex) => {
@@ -246,14 +234,7 @@ export default function App() {
                 const rowRatio = (dy - 680) / (918 - 680);
                 const op = Math.max(0.15, 0.82 - colRatio * 0.45 - (1 - rowRatio) * 0.35);
                 return (
-                  <circle
-                    key={`dot-${rIndex}-${cIndex}`}
-                    className="svg-dot grid-dot"
-                    cx={dx}
-                    cy={dy}
-                    r="1.4"
-                    opacity={op}
-                  />
+                  <circle key={`dot-${rIndex}-${cIndex}`} className="svg-dot grid-dot" cx={dx} cy={dy} r="1.4" opacity={op} />
                 );
               })
             )}
@@ -261,81 +242,95 @@ export default function App() {
         </g>
       </svg>
 
-      {/* Header */}
+      {/* ── Header ──────────────────────────────────────────── */}
       <header className="site-header">
         <div className="header-logo">
           <span className="logo-text">ATC</span>
         </div>
+
+        {/* Desktop nav */}
         <nav className="header-nav" aria-label="Main Navigation">
           {NAV_ITEMS.map(({ label, hash }) => {
             const isActive = activeHash === hash;
             return (
               <div key={hash} className={`nav-item${isActive ? ' active' : ''}`}>
-                <a href={hash}>{label}</a>
-                {isActive ? (
-                  <div className="nav-underline" />
-                ) : (
-                  <div className="nav-hover-line" />
-                )}
+                <a href={hash} onClick={() => handleNavClick(hash)}>{label}</a>
+                {isActive ? <div className="nav-underline" /> : <div className="nav-hover-line" />}
               </div>
             );
           })}
-
-          {/* Theme toggle — sun / moon icon */}
           <button
             className="theme-toggle"
             aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
             onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
           >
-            {theme === 'dark' ? (
-              /* Sun icon */
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <circle cx="12" cy="12" r="5" />
-                <line x1="12" y1="1"  x2="12" y2="3"  />
-                <line x1="12" y1="21" x2="12" y2="23" />
-                <line x1="4.22" y1="4.22"  x2="5.64" y2="5.64"  />
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78" />
-                <line x1="1"  y1="12" x2="3"  y2="12" />
-                <line x1="21" y1="12" x2="23" y2="12" />
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36" />
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22" />
-              </svg>
-            ) : (
-              /* Moon icon */
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-              </svg>
-            )}
+            <ThemeIcon theme={theme} />
           </button>
         </nav>
+
+        {/* Mobile controls: theme toggle + hamburger */}
+        <div className="mobile-controls">
+          <button
+            className="theme-toggle"
+            aria-label={theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme'}
+            onClick={() => setTheme((t) => (t === 'dark' ? 'light' : 'dark'))}
+          >
+            <ThemeIcon theme={theme} />
+          </button>
+          <button
+            className="hamburger"
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+            onClick={() => setMenuOpen((o) => !o)}
+          >
+            {/* Three bars → X morphing via CSS */}
+            <span className={`ham-bar ham-bar-1${menuOpen ? ' open' : ''}`} />
+            <span className={`ham-bar ham-bar-2${menuOpen ? ' open' : ''}`} />
+            <span className={`ham-bar ham-bar-3${menuOpen ? ' open' : ''}`} />
+          </button>
+        </div>
       </header>
 
-      {/* Main Title Composition */}
+      {/* ── Mobile nav drawer ───────────────────────────────── */}
+      <div
+        className={`mobile-nav-overlay${menuOpen ? ' open' : ''}`}
+        onClick={() => setMenuOpen(false)}
+        aria-hidden={!menuOpen}
+      />
+      <nav
+        className={`mobile-nav-drawer${menuOpen ? ' open' : ''}`}
+        aria-label="Mobile Navigation"
+      >
+        {NAV_ITEMS.map(({ label, hash }) => {
+          const isActive = activeHash === hash;
+          return (
+            <a
+              key={hash}
+              href={hash}
+              className={`mobile-nav-item${isActive ? ' active' : ''}`}
+              onClick={() => handleNavClick(hash)}
+            >
+              {label}
+            </a>
+          );
+        })}
+      </nav>
+
+      {/* ── Hero ────────────────────────────────────────────── */}
       <main className="hero-content">
         <div className="title-lockup">
           <h1 className="main-title">
             <span className="title-row title-row-1">
-              {/* PRESERVE THE EXACT DISTINCTIVE A / LAMBDA TREATMENT */}
               <span className="letter-stylized-a" aria-hidden="true">
                 <svg viewBox="0 0 100 88" className="lambda-glyph">
-                  {/* Outer chevron shape */}
-                  <polygon
-                    points="40,0 60,0 96,87 72,87 50,22 28,87 4,87"
-                    fill="currentColor"
-                  />
-                  {/* Characteristic horizontal spur / notch on inner left stroke */}
-                  <polygon
-                    points="12,65 31,65 24,75 5,75"
-                    fill="currentColor"
-                  />
+                  <polygon points="40,0 60,0 96,87 72,87 50,22 28,87 4,87" fill="currentColor" />
+                  <polygon points="12,65 31,65 24,75 5,75"                 fill="currentColor" />
                 </svg>
               </span>
               <span className="sr-only">A</span>LAN
             </span>
-
             <span className="title-row title-row-2">TURING</span>
           </h1>
-
           <div className="title-sub">
             <span>C</span>
             <span>L</span>
