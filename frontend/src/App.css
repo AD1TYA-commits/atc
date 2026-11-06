@@ -3,11 +3,13 @@
   width: 100vw;
   height: 100vh;
   min-height: 100vh;
-  background-color: #f5f3f4;
+  background-color: var(--bg);
   overflow: hidden;
   display: flex;
   flex-direction: column;
   user-select: none;
+  /* Smooth theme colour transition */
+  transition: background-color 0.35s ease;
 }
 
 /* Background Geometric SVG */
@@ -19,6 +21,73 @@
   height: 100%;
   pointer-events: none;
   z-index: 1;
+  animation: bgEntrance 1.4s cubic-bezier(0.16, 1, 0.3, 1) 0.05s both;
+  will-change: opacity, transform;
+}
+
+@keyframes bgEntrance {
+  0% {
+    opacity: 0;
+    transform: scale(0.99);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* Continuous Subtle Geometric Orbit */
+.geo-interactive-circles {
+  transform: translate(var(--shift-circles-x, 0px), var(--shift-circles-y, 0px));
+  transition: transform 0.14s cubic-bezier(0.2, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.geo-rotating-orbit {
+  transform-origin: 1162px 502px;
+  animation: geoOrbit 140s linear infinite;
+  will-change: transform;
+}
+
+@keyframes geoOrbit {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Crosshair Markers */
+.geo-crosshairs {
+  transform: translate(var(--shift-crosshair-x, 0px), var(--shift-crosshair-y, 0px));
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.crosshair-marker {
+  animation: crosshairBreathing 6s ease-in-out infinite alternate;
+}
+
+@keyframes crosshairBreathing {
+  0% {
+    opacity: 0.65;
+  }
+  100% {
+    opacity: 0.98;
+  }
+}
+
+/* Secondary Grids */
+.geo-grids {
+  transform: translate(var(--shift-grid-x, 0px), var(--shift-grid-y, 0px));
+  transition: transform 0.18s cubic-bezier(0.2, 0, 0.2, 1);
+  will-change: transform;
+}
+
+.geo-center-marker {
+  transform: translate(calc(var(--shift-circles-x, 0px) * 0.4), calc(var(--shift-circles-y, 0px) * 0.4));
+  transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
 /* Header */
@@ -31,6 +100,18 @@
   padding: 34px 108px 0 108px;
   width: 100%;
   box-sizing: border-box;
+  animation: headerEntrance 0.9s cubic-bezier(0.16, 1, 0.3, 1) 0.1s both;
+}
+
+@keyframes headerEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .header-logo .logo-text {
@@ -38,9 +119,14 @@
   font-weight: 800;
   font-size: 34px;
   letter-spacing: -0.02em;
-  color: #111;
+  color: var(--fg);
   display: inline-block;
   line-height: 1;
+  transition: opacity 0.25s ease, color 0.35s ease;
+}
+
+.header-logo .logo-text:hover {
+  opacity: 0.75;
 }
 
 .header-nav {
@@ -62,16 +148,39 @@
   font-size: 13px;
   font-weight: 600;
   letter-spacing: 0.17em;
-  color: #111;
+  color: var(--fg);
   text-decoration: none;
   line-height: 1;
+  transition: color 0.25s ease, letter-spacing 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.nav-item:hover a {
+  color: var(--fg);
+  letter-spacing: 0.21em;
 }
 
 .nav-underline {
   width: 100%;
   height: 1.5px;
-  background-color: #111;
+  background-color: var(--fg);
   margin-top: 15px;
+  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease;
+}
+
+.nav-item.active:hover .nav-underline {
+  transform: scaleX(1.12);
+}
+
+.nav-hover-line {
+  width: 0;
+  height: 1.5px;
+  background-color: var(--fg);
+  margin-top: 15px;
+  transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.35s ease;
+}
+
+.nav-item:not(.active):hover .nav-hover-line {
+  width: 100%;
 }
 
 /* Main Hero Title */
@@ -97,10 +206,11 @@
   padding: 0;
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 800;
-  color: #111;
+  color: var(--fg);
   display: flex;
   flex-direction: column;
   line-height: 0.88;
+  transition: color 0.35s ease;
 }
 
 .title-row {
@@ -108,12 +218,14 @@
   align-items: flex-end;
   font-size: 154px;
   text-transform: uppercase;
+  will-change: transform, opacity;
 }
 
 .title-row-1 {
   letter-spacing: 0.08em;
   transform: scaleX(1.18);
   transform-origin: left bottom;
+  animation: titleEntrance1 1.05s cubic-bezier(0.16, 1, 0.3, 1) 0.18s both;
 }
 
 .title-row-2 {
@@ -121,9 +233,32 @@
   margin-top: 8px;
   transform: scaleX(1.2);
   transform-origin: left bottom;
+  animation: titleEntrance2 1.15s cubic-bezier(0.16, 1, 0.3, 1) 0.32s both;
 }
 
-/* Stylized Initial A / Lambda */
+@keyframes titleEntrance1 {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scaleX(1.18);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleX(1.18);
+  }
+}
+
+@keyframes titleEntrance2 {
+  0% {
+    opacity: 0;
+    transform: translateY(28px) scaleX(1.2);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scaleX(1.2);
+  }
+}
+
+/* Stylized Initial A / Lambda — Preserved exactly */
 .letter-stylized-a {
   display: inline-flex;
   align-items: flex-end;
@@ -158,15 +293,32 @@
   width: 412px;
   margin-top: 36px;
   padding-left: 21px;
+  animation: subEntrance 0.95s cubic-bezier(0.16, 1, 0.3, 1) 0.48s both;
+}
+
+@keyframes subEntrance {
+  0% {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .title-sub span {
   font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
   font-weight: 300;
   font-size: 35px;
-  color: #111;
+  color: var(--fg);
   line-height: 1;
   display: inline-block;
+  transition: transform 0.25s ease, color 0.35s ease;
+}
+
+.title-sub span:hover {
+  transform: translateY(-2px);
 }
 
 /* Responsive adjustments */
@@ -192,7 +344,7 @@
     margin-top: 6px;
   }
   .title-sub {
-    width: 270px;
+    width: 290px;
     margin-top: 24px;
     padding-left: 14px;
   }
@@ -239,4 +391,77 @@
   .title-sub span {
     font-size: 16px;
   }
+}
+
+/* Accessibility: Respect Reduced Motion */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .geometric-background,
+  .site-header,
+  .title-row-1,
+  .title-row-2,
+  .title-sub,
+  .crosshair-marker,
+  .geo-rotating-orbit {
+    animation: none !important;
+    opacity: 1 !important;
+  }
+
+  .geo-interactive-circles,
+  .geo-crosshairs,
+  .geo-grids,
+  .geo-center-marker {
+    transform: none !important;
+    transition: none !important;
+  }
+
+  .title-row-1 {
+    transform: scaleX(1.18) !important;
+  }
+
+  .title-row-2 {
+    transform: scaleX(1.2) !important;
+  }
+}
+
+/* ─── Theme Toggle Button ──────────────────────────────────────── */
+.theme-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  color: var(--fg);
+  opacity: 0.7;
+  transition: opacity 0.2s ease;
+  /* Align with nav items visually */
+  margin-top: 0;
+  flex-shrink: 0;
+}
+
+.theme-toggle:hover {
+  opacity: 1;
+}
+
+.theme-toggle svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.theme-toggle:hover svg {
+  transform: rotate(20deg);
 }
