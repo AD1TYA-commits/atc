@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
+import cardIllustrations from './assets/card-illustrations.png';
 
 // ─── Nav items ───────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -8,6 +9,14 @@ const NAV_ITEMS = [
   { label: 'PROJECTS',  hash: '#projects' },
   { label: 'TEAM',      hash: '#team' },
   { label: 'RESOURCES', hash: '#resources' },
+] as const;
+
+const SECOND_PAGE_CARDS = [
+  { title: 'JOIN', artwork: 'join' },
+  { title: 'RESOURCES', artwork: 'resources' },
+  { title: 'TEAM', artwork: 'team' },
+  { title: 'GALLERY', artwork: 'gallery' },
+  { title: 'EVENTS', artwork: 'events' },
 ] as const;
 
 // ─── Theme helpers ────────────────────────────────────────────
@@ -38,6 +47,22 @@ function ThemeIcon({ theme }: { theme: Theme }) {
   ) : (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
+    </svg>
+  );
+}
+
+function CardArtwork({ kind }: { kind: (typeof SECOND_PAGE_CARDS)[number]['artwork'] }) {
+  const crops = {
+    join: '45 75 430 410',
+    resources: '515 95 500 390',
+    team: '1035 100 460 390',
+    gallery: '220 555 480 390',
+    events: '765 560 540 385',
+  } as const;
+
+  return (
+    <svg className={`card-artwork artwork-${kind}`} viewBox={crops[kind]} aria-hidden="true">
+      <image className="card-source-image" href={cardIllustrations} x="0" y="0" width="1536" height="1024" />
     </svg>
   );
 }
@@ -156,6 +181,7 @@ export default function App() {
 
 
   return (
+    <div className="site-pages">
     <div className="landing-container" ref={containerRef} id="home">
 
       {/* ── Background Geometry ──────────────────────────────── */}
@@ -339,6 +365,17 @@ export default function App() {
           </div>
         </div>
       </main>
+    </div>
+    <section className="blank-page" aria-label="Explore the Alan Turing Club">
+      <div className="second-page-grid">
+        {SECOND_PAGE_CARDS.map(({ title, artwork }) => (
+          <article className="landing-card" key={title}>
+            <CardArtwork kind={artwork} />
+            <h2>{title}</h2>
+          </article>
+        ))}
+      </div>
+    </section>
     </div>
   );
 }
