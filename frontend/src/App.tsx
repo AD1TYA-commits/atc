@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react';
 import './App.css';
 import cardIllustrations from './assets/card-illustrations.png';
 
@@ -53,18 +53,37 @@ function ThemeIcon({ theme }: { theme: Theme }) {
 
 function CardArtwork({ kind }: { kind: (typeof SECOND_PAGE_CARDS)[number]['artwork'] }) {
   const crops = {
-    join: '45 75 430 410',
-    resources: '515 95 500 390',
-    team: '1035 100 460 390',
-    gallery: '220 555 480 390',
-    events: '765 560 540 385',
+    join: '67 66 410 410',
+    resources: '542 63 450 450',
+    team: '1045 65 440 440',
+    gallery: '264 520 440 440',
+    events: '820 505 490 490',
   } as const;
 
   return (
-    <svg className={`card-artwork artwork-${kind}`} viewBox={crops[kind]} aria-hidden="true">
-      <image className="card-source-image" href={cardIllustrations} x="0" y="0" width="1536" height="1024" />
-    </svg>
+    <div className={`card-art-stage artwork-${kind}`}>
+      <div className="artwork-halo" aria-hidden="true" />
+      <svg className="card-artwork" viewBox={crops[kind]} preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+        <image className="card-source-image" href={cardIllustrations} x="0" y="0" width="1536" height="1024" />
+      </svg>
+    </div>
   );
+}
+
+function updateCardGlow(event: ReactPointerEvent<HTMLElement>) {
+  if (event.pointerType === 'touch') return;
+  const bounds = event.currentTarget.getBoundingClientRect();
+  const x = (event.clientX - bounds.left) / bounds.width;
+  const y = (event.clientY - bounds.top) / bounds.height;
+  event.currentTarget.style.setProperty('--pointer-x', `${x * bounds.width}px`);
+  event.currentTarget.style.setProperty('--pointer-y', `${y * bounds.height}px`);
+  event.currentTarget.style.setProperty('--tilt-x', `${((0.5 - y) * 12).toFixed(2)}deg`);
+  event.currentTarget.style.setProperty('--tilt-y', `${((x - 0.5) * 12).toFixed(2)}deg`);
+}
+
+function resetCardTilt(event: ReactPointerEvent<HTMLElement>) {
+  event.currentTarget.style.setProperty('--tilt-x', '0deg');
+  event.currentTarget.style.setProperty('--tilt-y', '0deg');
 }
 
 // ─── Component ────────────────────────────────────────────────
@@ -369,7 +388,12 @@ export default function App() {
     <section className="blank-page" aria-label="Explore the Alan Turing Club">
       <div className="second-page-grid">
         {SECOND_PAGE_CARDS.map(({ title, artwork }) => (
-          <article className="landing-card" key={title}>
+          <article
+            className="landing-card"
+            key={title}
+            onPointerMove={updateCardGlow}
+            onPointerLeave={resetCardTilt}
+          >
             <CardArtwork kind={artwork} />
             <h2>{title}</h2>
           </article>
