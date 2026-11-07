@@ -205,26 +205,51 @@
   }
 }
 
-/* Continuous Subtle Geometric Orbit */
+/* ─── Parallax & Scroll-Driven Sphere Geometry ────────────────── */
 .geo-interactive-circles {
   transform: translate(var(--shift-circles-x, 0px), var(--shift-circles-y, 0px));
   transition: transform 0.14s cubic-bezier(0.2, 0, 0.2, 1);
   will-change: transform;
 }
 
-.geo-rotating-orbit {
+/* Outer sphere construction: rotates clockwise with scroll */
+.geo-sphere-outer-group {
   transform-origin: 1162px 502px;
-  animation: geoOrbit 140s linear infinite;
+  transform: translate(var(--scroll-sphere-outer-x, 0px), var(--scroll-sphere-outer-y, 0px)) rotate(var(--scroll-sphere-outer-rot, 0deg));
   will-change: transform;
 }
 
-@keyframes geoOrbit {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
+/* Inner concentric sphere construction: rotates counter-clockwise with scroll */
+.geo-sphere-inner-group {
+  transform-origin: 1162px 502px;
+  transform: translate(var(--scroll-sphere-inner-x, 0px), var(--scroll-sphere-inner-y, 0px)) rotate(var(--scroll-sphere-inner-rot, 0deg));
+  will-change: transform;
+}
+
+.geo-circle-arc {
+  transform: translateY(var(--scroll-c-arc-y, 0px));
+  will-change: transform;
+}
+
+/* Parallax for horizontal & vertical crosshair construction lines */
+.geo-line-h {
+  transform: translateY(var(--scroll-line-h-y, 0px));
+  will-change: transform;
+}
+
+.geo-line-v {
+  transform: translate(var(--scroll-line-v-x, 0px), var(--scroll-line-v-y, 0px));
+  will-change: transform;
+}
+
+.geo-line-h-sub {
+  transform: translateY(calc(var(--scroll-line-h-y, 0px) * 0.7));
+  will-change: transform;
+}
+
+.geo-line-v-sub {
+  transform: translateY(calc(var(--scroll-line-v-y, 0px) * 0.6));
+  will-change: transform;
 }
 
 /* Crosshair Markers */
@@ -236,6 +261,16 @@
 
 .crosshair-marker {
   animation: crosshairBreathing 6s ease-in-out infinite alternate;
+}
+
+.crosshair-ul {
+  transform: translateY(var(--scroll-ch-ul-y, 0px));
+  will-change: transform;
+}
+
+.crosshair-lr {
+  transform: translateY(var(--scroll-ch-lr-y, 0px));
+  will-change: transform;
 }
 
 @keyframes crosshairBreathing {
@@ -254,8 +289,18 @@
   will-change: transform;
 }
 
+.plus-grid {
+  transform: translateY(var(--scroll-grid-plus-y, 0px));
+  will-change: transform;
+}
+
+.dot-grid {
+  transform: translateY(var(--scroll-grid-dot-y, 0px));
+  will-change: transform;
+}
+
 .geo-center-marker {
-  transform: translate(calc(var(--shift-circles-x, 0px) * 0.4), calc(var(--shift-circles-y, 0px) * 0.4));
+  transform: translate(calc(var(--shift-circles-x, 0px) * 0.4), calc(var(--shift-circles-y, 0px) * 0.4 + var(--scroll-c-orbit-y, 0px) * 0.5));
   transition: transform 0.15s cubic-bezier(0.2, 0, 0.2, 1);
 }
 
@@ -289,13 +334,25 @@
   font-size: 34px;
   letter-spacing: -0.02em;
   color: var(--fg);
-  display: inline-block;
+  display: inline-flex;
+  align-items: baseline;
   line-height: 1;
   transition: opacity 0.25s ease, color 0.35s ease;
 }
 
 .header-logo .logo-text:hover {
   opacity: 0.75;
+}
+
+.logo-stylized-a {
+  display: inline-flex;
+  align-items: baseline;
+  width: 29.5px;
+  height: 26px;
+  vertical-align: baseline;
+  margin-right: 2px;
+  margin-bottom: 0;
+  flex-shrink: 0;
 }
 
 .header-nav {
@@ -427,7 +484,7 @@
   }
 }
 
-/* Stylized Initial A / Lambda — Preserved exactly */
+/* Stylized A / Lambda — Preserved exactly for both As in ALAN and branding */
 .letter-stylized-a {
   display: inline-flex;
   align-items: flex-end;
@@ -435,6 +492,12 @@
   height: 118px;
   margin-right: 8px;
   margin-bottom: 2px;
+  flex-shrink: 0;
+}
+
+.letter-stylized-a-second {
+  margin-left: 6px;
+  margin-right: 8px;
 }
 
 .lambda-glyph {
@@ -745,7 +808,18 @@
   .geo-interactive-circles,
   .geo-crosshairs,
   .geo-grids,
-  .geo-center-marker {
+  .geo-center-marker,
+  .geo-sphere-outer-group,
+  .geo-sphere-inner-group,
+  .geo-circle-arc,
+  .geo-line-h,
+  .geo-line-v,
+  .geo-line-h-sub,
+  .geo-line-v-sub,
+  .plus-grid,
+  .dot-grid,
+  .crosshair-ul,
+  .crosshair-lr {
     transform: none !important;
     transition: none !important;
   }

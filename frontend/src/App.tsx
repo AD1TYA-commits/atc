@@ -51,6 +51,16 @@ function ThemeIcon({ theme }: { theme: Theme }) {
   );
 }
 
+// ─── Stylized A / Lambda glyph (Source of truth for all brand A letters) ─
+function StylizedA({ className = 'lambda-glyph' }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 100 88" className={className} aria-hidden="true">
+      <polygon points="40,0 60,0 96,87 72,87 50,22 28,87 4,87" fill="currentColor" />
+      <polygon points="12,65 31,65 24,75 5,75" fill="currentColor" />
+    </svg>
+  );
+}
+
 function CardArtwork({ kind }: { kind: (typeof SECOND_PAGE_CARDS)[number]['artwork'] }) {
   const crops = {
     join: '67 66 410 410',
@@ -150,45 +160,93 @@ export default function App() {
     };
   }, []);
 
-  // ── Inertial mouse parallax (desktop only) ─────────────────
+  // ── Unified mouse & scrubbed scroll parallax loop ──────────
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
     if (mediaQuery.matches) return;
-    // Skip parallax on touch devices
-    if (window.matchMedia('(pointer: coarse)').matches) return;
 
-    let targetX = 0, targetY = 0, currentX = 0, currentY = 0;
+    const isTouch = window.matchMedia('(pointer: coarse)').matches;
+
+    let targetMouseX = 0;
+    let targetMouseY = 0;
+    let currentMouseX = 0;
+    let currentMouseY = 0;
+
+    let targetScrollY = window.scrollY;
+    let currentScrollY = window.scrollY;
     let animId: number;
 
     const handleMouseMove = (e: MouseEvent) => {
-      targetX = (e.clientX / window.innerWidth) * 2 - 1;
-      targetY = (e.clientY / window.innerHeight) * 2 - 1;
+      targetMouseX = (e.clientX / window.innerWidth) * 2 - 1;
+      targetMouseY = (e.clientY / window.innerHeight) * 2 - 1;
     };
-    const handleMouseLeave = () => { targetX = 0; targetY = 0; };
+    const handleMouseLeave = () => {
+      targetMouseX = 0;
+      targetMouseY = 0;
+    };
 
-    window.addEventListener('mousemove', handleMouseMove, { passive: true });
-    window.addEventListener('mouseleave', handleMouseLeave);
+    const handleScroll = () => {
+      targetScrollY = window.scrollY;
+    };
+
+    if (!isTouch) {
+      window.addEventListener('mousemove', handleMouseMove, { passive: true });
+      window.addEventListener('mouseleave', handleMouseLeave);
+    }
+    window.addEventListener('scroll', handleScroll, { passive: true });
 
     const lerp = (s: number, e: number, f: number) => s + (e - s) * f;
 
     const tick = () => {
-      currentX = lerp(currentX, targetX, 0.04);
-      currentY = lerp(currentY, targetY, 0.04);
+      if (!isTouch) {
+        currentMouseX = lerp(currentMouseX, targetMouseX, 0.04);
+        currentMouseY = lerp(currentMouseY, targetMouseY, 0.04);
+      }
+      currentScrollY = lerp(currentScrollY, targetScrollY, 0.08);
+
       if (containerRef.current) {
-        containerRef.current.style.setProperty('--shift-circles-x', `${(currentX * 12).toFixed(2)}px`);
-        containerRef.current.style.setProperty('--shift-circles-y', `${(currentY * 12).toFixed(2)}px`);
-        containerRef.current.style.setProperty('--shift-grid-x',    `${(currentX * -6).toFixed(2)}px`);
-        containerRef.current.style.setProperty('--shift-grid-y',    `${(currentY * -6).toFixed(2)}px`);
-        containerRef.current.style.setProperty('--shift-crosshair-x', `${(currentX * 8).toFixed(2)}px`);
-        containerRef.current.style.setProperty('--shift-crosshair-y', `${(currentY * 8).toFixed(2)}px`);
+        if (!isTouch) {
+          containerRef.current.style.setProperty('--shift-circles-x', `${(currentMouseX * 12).toFixed(2)}px`);
+          containerRef.current.style.setProperty('--shift-circles-y', `${(currentMouseY * 12).toFixed(2)}px`);
+          containerRef.current.style.setProperty('--shift-grid-x',    `${(currentMouseX * -6).toFixed(2)}px`);
+          containerRef.current.style.setProperty('--shift-grid-y',    `${(currentMouseY * -6).toFixed(2)}px`);
+          containerRef.current.style.setProperty('--shift-crosshair-x', `${(currentMouseX * 8).toFixed(2)}px`);
+          containerRef.current.style.setProperty('--shift-crosshair-y', `${(currentMouseY * 8).toFixed(2)}px`);
+        }
+
+        const s = currentScrollY;
+        // Sphere outer & inner rotation (clearly noticeable & counter-rotating)
+        containerRef.current.style.setProperty('--scroll-sphere-outer-rot', `${(s * 0.08).toFixed(2)}deg`);
+        containerRef.current.style.setProperty('--scroll-sphere-inner-rot', `${(s * -0.10).toFixed(2)}deg`);
+
+        // 3D Parallax position shifts
+        containerRef.current.style.setProperty('--scroll-sphere-outer-x', `${(s * 0.02).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-sphere-outer-y', `${(s * -0.06).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-sphere-inner-x', `${(s * -0.04).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-sphere-inner-y', `${(s * -0.14).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-c-arc-y',        `${(s * -0.03).toFixed(2)}px`);
+
+        // Construction lines parallax
+        containerRef.current.style.setProperty('--scroll-line-h-y', `${(s * -0.05).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-line-v-y', `${(s * -0.11).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-line-v-x', `${(s * 0.03).toFixed(2)}px`);
+
+        // Crosshairs & grids parallax
+        containerRef.current.style.setProperty('--scroll-ch-ul-y',     `${(s * -0.07).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-ch-lr-y',     `${(s * -0.15).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-grid-plus-y', `${(s * -0.06).toFixed(2)}px`);
+        containerRef.current.style.setProperty('--scroll-grid-dot-y',  `${(s * -0.10).toFixed(2)}px`);
       }
       animId = requestAnimationFrame(tick);
     };
 
     animId = requestAnimationFrame(tick);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseleave', handleMouseLeave);
+      if (!isTouch) {
+        window.removeEventListener('mousemove', handleMouseMove);
+        window.removeEventListener('mouseleave', handleMouseLeave);
+      }
+      window.removeEventListener('scroll', handleScroll);
       cancelAnimationFrame(animId);
     };
   }, []);
@@ -226,27 +284,44 @@ export default function App() {
 
         {/* Static Construction Lines */}
         <g className="geo-static-lines">
-          <line className="svg-line" x1="0"    y1="502" x2="1648" y2="502" strokeWidth="1" />
-          <line className="svg-line" x1="1162" y1="60"  x2="1162" y2="885" strokeWidth="1" />
-          <line className="svg-line" x1="55"   y1="850" x2="770"  y2="850" strokeWidth="1" />
-          <line className="svg-line" x1="55"   y1="10"  x2="55"   y2="180" strokeWidth="1" />
+          <line className="svg-line geo-line-h" x1="0"    y1="502" x2="1648" y2="502" strokeWidth="1" />
+          <line className="svg-line geo-line-v" x1="1162" y1="60"  x2="1162" y2="885" strokeWidth="1" />
+          <line className="svg-line geo-line-h-sub" x1="55"   y1="850" x2="770"  y2="850" strokeWidth="1" />
+          <line className="svg-line geo-line-v-sub" x1="55"   y1="10"  x2="55"   y2="180" strokeWidth="1" />
         </g>
 
-        {/* Interactive / Animated Circles */}
+        {/* Interactive / Animated Circles & Sphere Geometry */}
         <g className="geo-interactive-circles">
-          <circle className="svg-cfill" cx="1162" cy="502" r="462" stroke="none" opacity="0.32" />
-          <circle className="svg-circle" cx="1162" cy="502" r="462" strokeWidth="1" />
-          <g className="geo-rotating-orbit">
-            <circle className="svg-circle" cx="1015" cy="482" r="373" strokeWidth="1" />
+          {/* Sweeping Arc across center-left */}
+          <circle className="svg-circle geo-circle-arc" cx="254" cy="712" r="729" strokeWidth="1" />
+
+          {/* Outer Sphere Construction (rotates clockwise with scroll) */}
+          <g className="geo-sphere-outer-group">
+            {/* Subtle tonal variation inside sphere */}
+            <circle className="svg-cfill" cx="1162" cy="502" r="462" stroke="none" opacity="0.32" />
+            {/* Primary Outer Circle */}
+            <circle className="svg-circle" cx="1162" cy="502" r="462" strokeWidth="1" />
+            {/* Outer intersecting orbital meridian */}
+            <circle className="svg-circle geo-orbital-ring" cx="1015" cy="482" r="373" strokeWidth="1" />
+            {/* Equatorial construction arc across outer sphere */}
+            <path className="svg-circle" d="M 700 502 A 462 200 0 0 0 1624 502" strokeWidth="0.8" opacity="0.45" />
+            {/* Right circumference edge bar */}
+            <rect className="svg-bar geo-edge-bar geo-right-bar" x="1560" y="658" width="28" height="9" rx="1.5" />
           </g>
-          <circle className="svg-circle" cx="1162" cy="502" r="236" strokeWidth="1" />
-          <circle className="svg-circle" cx="254"  cy="712" r="729" strokeWidth="1" />
+
+          {/* Inner Concentric Sphere Geometry (rotates counter-clockwise with scroll) */}
+          <g className="geo-sphere-inner-group">
+            {/* Concentric Inner Circle */}
+            <circle className="svg-circle" cx="1162" cy="502" r="236" strokeWidth="1" />
+            {/* Inner intersecting orbital meridian arc */}
+            <path className="svg-circle" d="M 972 502 A 200 236 0 0 1 1352 502" strokeWidth="0.9" opacity="0.6" />
+            {/* Center marker */}
+            <rect className="svg-bar geo-center-marker" x="1159" y="499" width="6" height="6" />
+          </g>
         </g>
 
-        {/* Markers */}
-        <rect className="svg-bar geo-center-marker" x="1159" y="499" width="6"  height="6" />
+        {/* Left edge bar */}
         <rect className="svg-bar geo-edge-bar geo-left-bar"  x="54"   y="340" width="30" height="9" rx="1.5" />
-        <rect className="svg-bar geo-edge-bar geo-right-bar" x="1560" y="658" width="28" height="9" rx="1.5" />
 
         {/* Crosshairs */}
         <g className="geo-crosshairs">
@@ -290,7 +365,12 @@ export default function App() {
       {/* ── Header ──────────────────────────────────────────── */}
       <header className="site-header">
         <div className="header-logo">
-          <span className="logo-text">ATC</span>
+          <span className="logo-text">
+            <span className="logo-stylized-a" aria-hidden="true">
+              <StylizedA />
+            </span>
+            <span className="sr-only">A</span>TC
+          </span>
         </div>
 
         {/* Desktop nav */}
@@ -367,12 +447,15 @@ export default function App() {
           <h1 className="main-title">
             <span className="title-row title-row-1">
               <span className="letter-stylized-a" aria-hidden="true">
-                <svg viewBox="0 0 100 88" className="lambda-glyph">
-                  <polygon points="40,0 60,0 96,87 72,87 50,22 28,87 4,87" fill="currentColor" />
-                  <polygon points="12,65 31,65 24,75 5,75"                 fill="currentColor" />
-                </svg>
+                <StylizedA />
               </span>
-              <span className="sr-only">A</span>LAN
+              <span className="sr-only">A</span>
+              <span>L</span>
+              <span className="letter-stylized-a letter-stylized-a-second" aria-hidden="true">
+                <StylizedA />
+              </span>
+              <span className="sr-only">A</span>
+              <span>N</span>
             </span>
             <span className="title-row title-row-2">TURING</span>
           </h1>
